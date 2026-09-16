@@ -106,27 +106,28 @@
 
   // ---------- Feature 1: botón de "modo foco" inyectado en la página ----------
   //
-  // Según el wireframe: un botón fijo como primera fila de la columna de
-  // recomendados (arriba de la lista/chips), que oculta el resto de esa
-  // columna y agranda el player casi a pantalla completa, pero SIN usar la
-  // Fullscreen API real (hay que poder seguir cambiando de pestaña o de URL).
+  // Un botón que oculta la lista de recomendados y agranda el player casi a
+  // pantalla completa, pero SIN usar la Fullscreen API real (hay que poder
+  // seguir cambiando de pestaña o de URL).
   //
-  // Se inserta como PRIMER HIJO de #secondary (no de #secondary-inner, que es
-  // lo que YouTube reemplaza en sus re-renders) para que:
-  //   1) quede en el flujo normal del layout, empujando hacia abajo las
-  //      tabs/chips propias de YouTube en vez de tapizarlas (antes vivía en
-  //      document.body con position:fixed y quedaba flotando encima de esas
-  //      tabs, ver captura del bug).
-  //   2) al activar el modo foco, styles.css puede ocultar el resto de
-  //      #secondary (">*:not(#btn)") sin ocultar el botón, así se puede
-  //      seguir clickeando para revertir.
+  // El botón cambia de posición según el estado, en vez de vivir siempre en
+  // el mismo lugar:
+  //   - Sidebar visible (focusMode apagado): se inserta como PRIMER HIJO de
+  //     #secondary, en el flujo normal, para que empuje hacia abajo las
+  //     tabs/chips propias de YouTube en vez de taparlas (antes vivía
+  //     siempre en document.body con position:fixed y quedaba flotando
+  //     encima de esas tabs).
+  //   - Sidebar oculta (focusMode prendido): #secondary entero se oculta con
+  //     display:none, así que un botón adentro dejaría de ser clickeable
+  //     para revertir. Se reubica en document.body con position:fixed; como
+  //     en este estado no queda nada visible con lo que superponerse, flotar
+  //     arriba a la derecha es seguro.
   function ensureFocusButton() {
     const flexy = safeQuery('ytd-watch-flexy');
     const existingBtn = document.getElementById(FOCUS_BUTTON_ID);
 
-    const secondary = flexy && safeQuery('#secondary', flexy);
-    if (!flexy || !secondary) {
-      // No estamos en una página de video, o la sidebar todavía no renderizó.
+    if (!flexy) {
+      // No estamos en una página de video: no tiene sentido mostrar el botón.
       existingBtn?.remove();
       return;
     }
@@ -142,10 +143,27 @@
       });
     }
 
-    // YouTube re-renderiza #secondary-inner seguido; si eso desplaza nuestro
-    // botón, lo volvemos a poner como primer hijo en la próxima pasada.
-    if (secondary.firstElementChild !== btn) {
-      secondary.prepend(btn);
+    if (currentSettings.focusMode) {
+      btn.classList.remove('ytx-focus-btn--inline');
+      btn.classList.add('ytx-focus-btn--floating');
+      if (btn.parentElement !== document.body) {
+        document.body.appendChild(btn);
+      }
+    } else {
+      const secondary = safeQuery('#secondary', flexy);
+      btn.classList.remove('ytx-focus-btn--floating');
+      btn.classList.add('ytx-focus-btn--inline');
+      if (secondary) {
+        // YouTube re-renderiza #secondary-inner seguido; si eso desplaza
+        // nuestro botón, lo volvemos a poner como primer hijo acá.
+        if (secondary.firstElementChild !== btn) {
+          secondary.prepend(btn);
+        }
+      } else if (btn.parentElement !== document.body) {
+        // La sidebar todavía no renderizó: dejamos el botón flotante
+        // momentáneamente para no perderlo.
+        document.body.appendChild(btn);
+      }
     }
 
     btn.textContent = currentSettings.focusMode ? 'Mostrar recomendados' : 'Ocultar recomendados';

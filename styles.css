@@ -14,22 +14,19 @@
       la pestaña (no es la Fullscreen API real, por eso se puede seguir
       navegando o cambiando la URL con el modo activo).
 
-      El botón se inserta como primer hijo de #secondary (ver content.js),
-      así que acá NO ocultamos #secondary entero (eso también taparía el
-      botón e impediría desactivar el modo). Ocultamos únicamente el resto
-      de sus hijos y encogemos el ancho de la columna al del botón.
+      Mientras el modo está activo, content.js reubica el botón fuera de
+      #secondary (a document.body, con la variante .ytx-focus-btn--floating)
+      antes de que esta regla lo oculte, así que acá sí podemos ocultar
+      #secondary entero sin perder la forma de revertir el modo. Encogerlo
+      en vez de ocultarlo (como se probó antes) generaba un bug: #secondary
+      tiene lógica propia de YouTube (sticky con offsets calculados por JS)
+      que lo despositiona en vez de simplemente encogerse.
    ============================================================ */
 html.ytx-focus-mode #secondary.ytd-watch-flexy {
-  width: 220px !important;
-  min-width: 220px !important;
-  max-width: 220px !important;
-}
-
-html.ytx-focus-mode #secondary.ytd-watch-flexy > *:not(#ytx-focus-toggle-btn) {
   display: none !important;
 }
 
-/* Al encoger la sidebar, que el reproductor/columna principal aproveche
+/* Al ocultar la sidebar, que el reproductor/columna principal aproveche
    todo el ancho disponible en vez de dejar un hueco vacío. */
 html.ytx-focus-mode #primary.ytd-watch-flexy {
   max-width: none !important;
@@ -39,10 +36,21 @@ html.ytx-focus-mode #primary.ytd-watch-flexy {
 /* Estira el contenedor del player en altura. content.js ya se encargó de
    activar el teatro real (clickeando el botón de YouTube), así que acá solo
    forzamos que ese contenedor use casi toda la altura visible de la pestaña.
-   Si en tu versión de YouTube el player no llega a estirarse, pasame el HTML
-   de #player-container-outer para ajustar el selector. */
+   #movie_player es el id principal: lo usa la propia API pública de
+   YouTube (document.getElementById('movie_player')) desde hace más de una
+   década, así que es el selector más estable para forzar el tamaño real
+   del reproductor. #movie_player tiene su propio ResizeObserver interno
+   que recalcula el <video> y el letterboxing apenas cambia el tamaño de su
+   caja, por eso alcanza con forzarle la altura a él (no hace falta tocar
+   el <video> ni sus contenedores internos). Los selectores de contenedores
+   "outer" quedan como respaldo por si en tu versión de YouTube el que
+   define la altura real es un ancestro en vez de #movie_player mismo.
+   Si ninguno alcanza, pasame el HTML de #player-container-outer. */
+html.ytx-focus-mode ytd-watch-flexy[theater] #movie_player,
 html.ytx-focus-mode ytd-watch-flexy[theater] #player-container-outer,
+html.ytx-focus-mode ytd-watch-flexy[theater] #player-container,
 html.ytx-focus-mode ytd-watch-flexy[theater] #player-theater-container,
+html.ytx-focus-mode ytd-watch-flexy[theater] #full-bleed-container,
 html.ytx-focus-mode ytd-watch-flexy[theater] #player {
   height: calc(100vh - var(--ytd-masthead-height, 56px)) !important;
   max-height: calc(100vh - var(--ytd-masthead-height, 56px)) !important;
@@ -114,26 +122,41 @@ ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model [class*="t
   -webkit-line-clamp: 2 !important;
 }
 
+/* Red de seguridad estructural: si el item ni siquiera es un
+   yt-lockup-view-model (YouTube prueba varios formatos por A/B test), forzamos
+   que CUALQUIER hijo directo de #items se vea como fila [miniatura | texto],
+   asumiendo únicamente que el primer hijo del item es su miniatura -eso no
+   cambió en ningún rediseño hasta ahora-, sin depender de nombres de tag o
+   clase. Menos preciso que los bloques de arriba pero más resistente a
+   cambios de marcado. */
+ytd-watch-next-secondary-results-renderer #items > * {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+}
+
+ytd-watch-next-secondary-results-renderer #items > * > *:first-child {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+  flex-shrink: 0 !important;
+}
+
+ytd-watch-next-secondary-results-renderer #items > * img {
+  width: 100% !important;
+  height: auto !important;
+}
+
 ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model [class*="metadata-row"] {
   font-size: 11px !important;
   line-height: 1.3 !important;
 }
 
-/* Botón de modo foco, inyectado por content.js como primer hijo de
-   #secondary (ver ensureFocusButton). Vive en el flujo normal de la
-   columna de recomendados, como una fila propia arriba de todo lo demás,
-   en vez de flotar encima de las tabs/chips de YouTube con position:fixed
-   (eso tapaba elementos como las tabs de canal). */
+/* Botón de modo foco, inyectado por content.js. Estilo base compartido por
+   sus dos variantes (ver ensureFocusButton para cuándo se usa cada una). */
 .ytx-focus-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  box-sizing: border-box;
-  margin: 0 0 12px;
-  padding: 10px 14px;
   border: none;
-  border-radius: 8px;
   background: rgba(0, 0, 0, 0.75);
   color: #fff;
   font-size: 13px;
@@ -148,6 +171,32 @@ ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model [class*="m
 
 .ytx-focus-btn.is-active {
   background: #ff0000;
+}
+
+/* Sidebar visible: primer hijo de #secondary, en flujo normal, como una
+   fila propia arriba de todo lo demás (tabs/chips incluidos) en vez de
+   flotar encima con position:fixed. */
+.ytx-focus-btn--inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+/* Sidebar oculta (modo foco activo): reubicado en document.body. Como acá
+   no queda contenido visible con el que superponerse, position:fixed en la
+   esquina es seguro. */
+.ytx-focus-btn--floating {
+  position: fixed;
+  top: calc(var(--ytd-masthead-height, 56px) + 12px);
+  right: 16px;
+  z-index: 9999;
+  padding: 8px 14px;
+  border-radius: 18px;
 }
 
 /* ============================================================
