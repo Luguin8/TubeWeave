@@ -106,18 +106,27 @@
 
   // ---------- Feature 1: botón de "modo foco" inyectado en la página ----------
   //
-  // Según el wireframe: un botón visible mientras se mira un video que oculta
-  // la lista de recomendados y agranda el player casi a pantalla completa,
-  // pero SIN usar la Fullscreen API real (hay que poder seguir cambiando de
-  // pestaña o de URL). Se inyecta con position:fixed y NO como hijo de
-  // #secondary, porque si viviera adentro se ocultaría junto con la sidebar
-  // y el usuario no podría volver a clickearlo para revertir.
+  // Según el wireframe: un botón fijo como primera fila de la columna de
+  // recomendados (arriba de la lista/chips), que oculta el resto de esa
+  // columna y agranda el player casi a pantalla completa, pero SIN usar la
+  // Fullscreen API real (hay que poder seguir cambiando de pestaña o de URL).
+  //
+  // Se inserta como PRIMER HIJO de #secondary (no de #secondary-inner, que es
+  // lo que YouTube reemplaza en sus re-renders) para que:
+  //   1) quede en el flujo normal del layout, empujando hacia abajo las
+  //      tabs/chips propias de YouTube en vez de tapizarlas (antes vivía en
+  //      document.body con position:fixed y quedaba flotando encima de esas
+  //      tabs, ver captura del bug).
+  //   2) al activar el modo foco, styles.css puede ocultar el resto de
+  //      #secondary (">*:not(#btn)") sin ocultar el botón, así se puede
+  //      seguir clickeando para revertir.
   function ensureFocusButton() {
     const flexy = safeQuery('ytd-watch-flexy');
     const existingBtn = document.getElementById(FOCUS_BUTTON_ID);
 
-    if (!flexy) {
-      // No estamos en una página de video: no tiene sentido mostrar el botón.
+    const secondary = flexy && safeQuery('#secondary', flexy);
+    if (!flexy || !secondary) {
+      // No estamos en una página de video, o la sidebar todavía no renderizó.
       existingBtn?.remove();
       return;
     }
@@ -131,7 +140,12 @@
       btn.addEventListener('click', () => {
         chrome.storage.sync.set({ focusMode: !currentSettings.focusMode });
       });
-      document.body.appendChild(btn);
+    }
+
+    // YouTube re-renderiza #secondary-inner seguido; si eso desplaza nuestro
+    // botón, lo volvemos a poner como primer hijo en la próxima pasada.
+    if (secondary.firstElementChild !== btn) {
+      secondary.prepend(btn);
     }
 
     btn.textContent = currentSettings.focusMode ? 'Mostrar recomendados' : 'Ocultar recomendados';
