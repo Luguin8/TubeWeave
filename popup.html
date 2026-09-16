@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>TubeWeave</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="header">
+    <h1>TubeWeave</h1>
+    <p class="subtitle">Activá lo que quieras cambiar. Se aplica al instante, sin recargar la pestaña.</p>
+  </header>
+
+  <p class="hint">El botón para ocultar recomendados y agrandar el video ahora aparece directamente arriba a la derecha cuando estás viendo un video en YouTube.</p>
+
+  <main class="options">
+    <label class="option">
+      <input type="checkbox" data-key="hideShorts" />
+      <span class="option-text">
+        <span class="option-title">Ocultar Shorts</span>
+        <span class="option-desc">Quita los estantes de Shorts en el inicio y en la búsqueda</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input type="checkbox" data-key="hideComments" />
+      <span class="option-text">
+        <span class="option-title">Ocultar comentarios</span>
+        <span class="option-desc">Oculta la sección de comentarios del video</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input type="checkbox" data-key="wideTheaterMode" />
+      <span class="option-text">
+        <span class="option-title">Forzar modo teatro</span>
+        <span class="option-desc">El reproductor se agranda automáticamente en cada video</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input type="checkbox" data-key="hideChipsBar" />
+      <span class="option-text">
+        <span class="option-title">Ocultar barra de categorías</span>
+        <span class="option-desc">Quita los chips de categorías arriba del feed de inicio</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input type="checkbox" data-key="compactGrid" />
+      <span class="option-text">
+        <span class="option-title">Grid compacto en el inicio</span>
+        <span class="option-desc">Cambia las tarjetas grandes por una lista compacta</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input type="checkbox" data-key="hideLikeCount" />
+      <span class="option-text">
+        <span class="option-title">Ocultar contador de Me gusta</span>
+        <span class="option-desc">Mantiene los botones, oculta solo el número</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input type="checkbox" data-key="searchOnlyMode" />
+      <span class="option-text">
+        <span class="option-title">Modo solo búsqueda</span>
+        <span class="option-desc">Oculta todo el feed de inicio, deja solo la barra de búsqueda</span>
+      </span>
+    </label>
+  </main>
+
+  <footer class="footer">
+    <span id="status" class="status" aria-live="polite"></span>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+/* styles.css — TubeWeave
+ *
+ * Todas las reglas están detrás de una clase en <html> que content.js
+ * activa/desactiva según las preferencias guardadas (ver BODY_CLASS_MAP).
+ * Los selectores priorizan ids y atributos estables de YouTube por sobre
+ * clases generadas dinámicamente. Si YouTube cambia alguno de estos
+ * elementos y una feature deja de funcionar, este es el único archivo que
+ * hace falta tocar.
+ */
+
+/* ============================================================
+   1) Modo foco (botón inyectado por content.js): oculta la sidebar de
+      recomendados y estira el player casi a pantalla completa DENTRO de
+      la pestaña (no es la Fullscreen API real, por eso se puede seguir
+      navegando o cambiando la URL con el modo activo).
+   ============================================================ */
+html.ytx-focus-mode #secondary.ytd-watch-flexy {
+  display: none !important;
+}
+
+/* Al ocultar la sidebar, que el reproductor/columna principal aproveche
+   todo el ancho disponible en vez de dejar un hueco vacío. */
+html.ytx-focus-mode #primary.ytd-watch-flexy {
+  max-width: none !important;
+  margin-right: 0 !important;
+}
+
+/* Estira el contenedor del player en altura. content.js ya se encargó de
+   activar el teatro real (clickeando el botón de YouTube), así que acá solo
+   forzamos que ese contenedor use casi toda la altura visible de la pestaña.
+   Si en tu versión de YouTube el player no llega a estirarse, pasame el HTML
+   de #player-container-outer para ajustar el selector. */
+html.ytx-focus-mode ytd-watch-flexy[theater] #player-container-outer,
+html.ytx-focus-mode ytd-watch-flexy[theater] #player-theater-container,
+html.ytx-focus-mode ytd-watch-flexy[theater] #player {
+  height: calc(100vh - var(--ytd-masthead-height, 56px)) !important;
+  max-height: calc(100vh - var(--ytd-masthead-height, 56px)) !important;
+  width: 100% !important;
+}
+
+html.ytx-focus-mode ytd-watch-flexy[theater] #columns {
+  max-width: 100% !important;
+}
+
+/* ============================================================
+   1b) Sidebar de recomendados más compacta por defecto (siempre activa,
+       sin toggle), para que entren 6 o más videos sin hacer scroll: menos
+       ancho de miniatura y menos espacio entre items.
+   ============================================================ */
+ytd-watch-next-secondary-results-renderer #items ytd-compact-video-renderer,
+ytd-watch-next-secondary-results-renderer #items ytd-compact-playlist-renderer,
+ytd-watch-next-secondary-results-renderer #items ytd-compact-radio-renderer {
+  margin-bottom: 4px !important;
+}
+
+ytd-watch-next-secondary-results-renderer ytd-thumbnail {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+}
+
+ytd-watch-next-secondary-results-renderer #meta {
+  padding-top: 0 !important;
+}
+
+ytd-watch-next-secondary-results-renderer #video-title {
+  font-size: 13px !important;
+  line-height: 1.3 !important;
+  -webkit-line-clamp: 2 !important;
+}
+
+ytd-watch-next-secondary-results-renderer ytd-channel-name,
+ytd-watch-next-secondary-results-renderer #metadata-line {
+  font-size: 11px !important;
+}
+
+/* Botón flotante de modo foco, inyectado por content.js. Fijo en pantalla
+   (no dentro de #secondary) para que siga siendo clickeable incluso cuando
+   la sidebar está oculta. */
+.ytx-focus-btn {
+  position: fixed;
+  top: calc(var(--ytd-masthead-height, 56px) + 12px);
+  right: 16px;
+  z-index: 9999;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 12px;
+  font-family: 'Roboto', Arial, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.ytx-focus-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.ytx-focus-btn.is-active {
+  background: #ff0000;
+}
+
+/* ============================================================
+   2) Ocultar Shorts en el home y en resultados de búsqueda
+   ============================================================
+   Nota: los estantes de Shorts son de los elementos que más cambian de
+   marcado entre versiones de YouTube. Si dejan de ocultarse, pasame el
+   HTML del estante para ajustar el selector. */
+html.ytx-hide-shorts ytd-reel-shelf-renderer,
+html.ytx-hide-shorts ytd-rich-shelf-renderer[is-shorts],
+html.ytx-hide-shorts ytd-rich-section-renderer:has(> ytd-rich-shelf-renderer[is-shorts]) {
+  display: none !important;
+}
+
+/* ============================================================
+   3) Ocultar comentarios
+   ============================================================ */
+html.ytx-hide-comments ytd-comments#comments {
+  display: none !important;
+}
+
+/* ============================================================
+   5) Ocultar barra de chips/categorías arriba del feed del home
+   ============================================================ */
+html.ytx-hide-chips ytd-feed-filter-chip-bar-renderer {
+  display: none !important;
+}
+
+/* ============================================================
+   6) Grid del home: tarjetas grandes -> lista compacta
+   ============================================================ */
+html.ytx-compact-grid ytd-rich-grid-renderer #contents.ytd-rich-grid-renderer {
+  display: flex !important;
+  flex-direction: column !important;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+html.ytx-compact-grid ytd-rich-grid-renderer ytd-rich-item-renderer {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 8px 4px !important;
+  border-bottom: 1px solid var(--yt-spec-10-percent-layer, rgba(128, 128, 128, 0.2));
+}
+
+html.ytx-compact-grid ytd-rich-item-renderer #dismissible {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+}
+
+html.ytx-compact-grid ytd-rich-item-renderer ytd-thumbnail {
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+  margin-right: 12px !important;
+}
+
+html.ytx-compact-grid ytd-rich-item-renderer #details {
+  padding-top: 0 !important;
+}
+
+/* Evita que se sigan generando filas "grandes" fantasma en el grid */
+html.ytx-compact-grid ytd-rich-grid-renderer #contents.ytd-rich-grid-renderer > ytd-rich-grid-row {
+  display: contents !important;
+}
+
+/* ============================================================
+   7) Ocultar SOLO el contador numérico de Me gusta/No me gusta
+   ============================================================
+   Se mantienen los botones visibles; se oculta el texto del contador.
+   Se cubren tanto el componente nuevo (view-model / botón segmentado)
+   como el legacy ytd-toggle-button-renderer por las dudas. */
+html.ytx-hide-like-count #segmented-like-button .yt-spec-button-shape-next__button-text-content,
+html.ytx-hide-like-count #segmented-dislike-button .yt-spec-button-shape-next__button-text-content,
+html.ytx-hide-like-count like-button-view-model .yt-spec-button-shape-next__button-text-content,
+html.ytx-hide-like-count dislike-button-view-model .yt-spec-button-shape-next__button-text-content,
+html.ytx-hide-like-count #top-level-buttons-computed ytd-toggle-button-renderer #text {
+  display: none !important;
+}
+
+/* ============================================================
+   8) Modo "solo búsqueda": ocultar todo el home
+   ============================================================
+   #masthead (con la barra de búsqueda) queda fuera de ytd-browse, así que
+   ocultando el browse de la home alcanza para dejar solo el buscador. */
+html.ytx-search-only ytd-browse[page-subtype="home"] {
+  display: none !important;
+}
