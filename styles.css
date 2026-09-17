@@ -33,9 +33,26 @@ html.ytx-focus-mode #primary.ytd-watch-flexy {
   margin-right: 0 !important;
 }
 
+/* El "fullscreen falso" tiene que tapar TODO lo de arriba, buscador
+   incluido, no solo la sidebar. #masthead-container es el elemento fixed
+   (confirmado por inspección real) que contiene toda la barra superior de
+   YouTube (logo, buscador, notificaciones, avatar). ytd-page-manager (el
+   contenido debajo) tiene un margin-top: 56px fijo pensado para dejarle
+   lugar a esa barra; si no se lo sacamos, queda un hueco vacío arriba del
+   video del mismo alto que el masthead que acabamos de ocultar. */
+html.ytx-focus-mode #masthead-container {
+  display: none !important;
+}
+
+html.ytx-focus-mode ytd-page-manager {
+  margin-top: 0 !important;
+}
+
 /* Estira el contenedor del player en altura. content.js ya se encargó de
    activar el teatro real (clickeando el botón de YouTube), así que acá solo
-   forzamos que ese contenedor use casi toda la altura visible de la pestaña.
+   forzamos que ese contenedor use toda la altura visible de la pestaña. Como
+   el masthead queda oculto (regla de arriba), ya no hay que restarle su
+   altura: el video puede usar el 100vh completo.
    #movie_player es el id principal: lo usa la propia API pública de
    YouTube (document.getElementById('movie_player')) desde hace más de una
    década, así que es el selector más estable para forzar el tamaño real
@@ -52,8 +69,8 @@ html.ytx-focus-mode ytd-watch-flexy[theater] #player-container,
 html.ytx-focus-mode ytd-watch-flexy[theater] #player-theater-container,
 html.ytx-focus-mode ytd-watch-flexy[theater] #full-bleed-container,
 html.ytx-focus-mode ytd-watch-flexy[theater] #player {
-  height: calc(100vh - var(--ytd-masthead-height, 56px)) !important;
-  max-height: calc(100vh - var(--ytd-masthead-height, 56px)) !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
   width: 100% !important;
 }
 
@@ -176,16 +193,31 @@ ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model .ytContent
   border-radius: 8px;
 }
 
-/* Sidebar oculta (modo foco activo): reubicado en document.body. Como acá
-   no queda contenido visible con el que superponerse, position:fixed en la
-   esquina es seguro. */
+/* Sidebar oculta (modo foco activo): content.js lo inserta como un ícono
+   más adentro de .ytp-right-controls-right, el grupo real de controles del
+   reproductor (junto a teatro/pantalla completa, confirmado por inspección
+   real del DOM). Estilo consistente con los botones nativos de YouTube
+   (.ytp-button): transparente, texto chico, mismo alto que la barra de
+   controles, en vez del pill rojo gigante flotando suelto de antes. */
 .ytx-focus-btn--floating {
-  position: fixed;
-  top: calc(var(--ytd-masthead-height, 56px) + 12px);
-  right: 16px;
-  z-index: 9999;
-  padding: 8px 14px;
-  border-radius: 18px;
+  position: static;
+  height: 100%;
+  margin: 0;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  border-radius: 2px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ytx-focus-btn--floating:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.ytx-focus-btn--floating.is-active {
+  background: rgba(255, 0, 0, 0.4);
 }
 
 /* ============================================================

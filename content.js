@@ -121,18 +121,17 @@
   // negras o un layout roto. Lo correcto es clickear el botón real de
   // "Theater mode" para que el propio reproductor de YouTube haga el resize.
   //
-  // Comportamiento: solo FORZAMOS que se active. Si además el usuario lo
-  // desactiva a mano estando el toggle prendido, lo volvemos a activar en la
-  // próxima pasada del observer (eso es justamente "forzar modo teatro
-  // siempre", como pide la spec).
-  function applyTheaterMode(enabled) {
-    if (!enabled) return;
-
+  // Comportamiento: bidireccional. Si hay que estar en teatro (wideTheaterMode
+  // o focusMode) y no lo está, lo activa; si NO hay que estar en teatro y
+  // sigue en teatro (por ejemplo, al salir del modo foco), lo desactiva. Así
+  // "forzar modo teatro" realmente fuerza en los dos sentidos, y salir del
+  // modo foco vuelve todo a la normalidad en vez de dejar el teatro prendido.
+  function applyTheaterMode(shouldBeTheater) {
     const flexy = safeQuery('ytd-watch-flexy');
     if (!flexy) return; // no estamos en una página de video
 
     const isTheaterAlready = flexy.hasAttribute('theater');
-    if (isTheaterAlready) return;
+    if (shouldBeTheater === isTheaterAlready) return;
 
     const sizeButton = safeQuery('.ytp-size-button');
     sizeButton?.click();
@@ -153,9 +152,10 @@
   //     encima de esas tabs).
   //   - Sidebar oculta (focusMode prendido): #secondary entero se oculta con
   //     display:none, así que un botón adentro dejaría de ser clickeable
-  //     para revertir. Se reubica en document.body con position:fixed; como
-  //     en este estado no queda nada visible con lo que superponerse, flotar
-  //     arriba a la derecha es seguro.
+  //     para revertir. Se reubica como un ícono más dentro de
+  //     .ytp-right-controls-right, el grupo de controles nativo del
+  //     reproductor (junto a teatro/pantalla completa) para que quede chico
+  //     e integrado en vez de un pill gigante flotando encima del video.
   function ensureFocusButton() {
     const flexy = safeQuery('ytd-watch-flexy');
     const existingBtn = document.getElementById(FOCUS_BUTTON_ID);
@@ -188,7 +188,14 @@
     if (currentSettings.focusMode) {
       btn.classList.remove('ytx-focus-btn--inline');
       btn.classList.add('ytx-focus-btn--floating');
-      if (btn.parentElement !== document.body) {
+      const rightControls = safeQuery('.ytp-right-controls-right') || safeQuery('.ytp-right-controls');
+      if (rightControls) {
+        if (btn.parentElement !== rightControls) {
+          rightControls.prepend(btn);
+        }
+      } else if (btn.parentElement !== document.body) {
+        // El reproductor todavía no renderizó sus controles: dejamos el
+        // botón flotante momentáneamente para no perderlo.
         document.body.appendChild(btn);
       }
     } else {
@@ -217,10 +224,9 @@
   function applyAll() {
     applyClassToggles(currentSettings);
     // El modo foco también fuerza teatro (para el efecto "fullscreen dentro
-    // de la pestaña"), independientemente del toggle de teatro del popup.
-    if (currentSettings.wideTheaterMode || currentSettings.focusMode) {
-      applyTheaterMode(true);
-    }
+    // de la pestaña"), independientemente del toggle de teatro del popup. Si
+    // ninguno de los dos pide teatro, applyTheaterMode lo desactiva.
+    applyTheaterMode(currentSettings.wideTheaterMode || currentSettings.focusMode);
     ensureFocusButton();
   }
 
