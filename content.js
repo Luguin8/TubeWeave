@@ -67,6 +67,40 @@
     }
   }
 
+  // ---------- Contexto de extensión invalidado ----------
+  //
+  // Cuando recargás la extensión en chrome://extensions, las pestañas de
+  // YouTube que ya estaban abiertas NO reciben el content.js nuevo: siguen
+  // corriendo esta misma copia, pero con un chrome.runtime/chrome.storage
+  // que Chrome ya destruyó. Cualquier llamada a chrome.storage.* en ese
+  // estado tira "Extension context invalidated" como excepción no atrapada.
+  //
+  // No hay forma de "revivir" esta copia vieja del script desde acá: la
+  // única solución real es recargar la pestaña de YouTube. Lo que sí
+  // podemos hacer es detectarlo, cortar el observer/listeners para no
+  // seguir intentando cosas, y avisar en consola en vez de dejar que
+  // explote sin contexto.
+  let contextInvalidated = false;
+
+  function isExtensionContextValid() {
+    try {
+      return Boolean(chrome?.runtime?.id);
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function handleInvalidatedContext() {
+    if (contextInvalidated) return;
+    contextInvalidated = true;
+    console.warn(
+      '[TubeWeave] La extensión se actualizó o se recargó desde chrome://extensions. ' +
+        'Esta pestaña quedó con una copia vieja del script: recargá la página (F5) para que TubeWeave vuelva a aplicarse.'
+    );
+    observer.disconnect();
+    window.removeEventListener('yt-navigate-finish', applyAll);
+  }
+
   // ---------- Features basadas en clases (puro CSS) ----------
 
   function applyClassToggles(settings) {
@@ -139,7 +173,15 @@
       btn.type = 'button';
       btn.className = 'ytx-focus-btn';
       btn.addEventListener('click', () => {
-        chrome.storage.sync.set({ focusMode: !currentSettings.focusMode });
+        if (!isExtensionContextValid()) {
+          handleInvalidatedContext();
+          return;
+        }
+        try {
+          chrome.storage.sync.set({ focusMode: !currentSettings.focusMode });
+        } catch (err) {
+          handleInvalidatedContext();
+        }
       });
     }
 
@@ -185,25 +227,45 @@
   // ---------- Storage ----------
 
   function loadSettingsAndApply() {
-    chrome.storage.sync.get(DEFAULT_SETTINGS, (stored) => {
-      currentSettings = { ...DEFAULT_SETTINGS, ...stored };
-      applyAll();
-    });
+    if (!isExtensionContextValid()) {
+      handleInvalidatedContext();
+      return;
+    }
+    try {
+      chrome.storage.sync.get(DEFAULT_SETTINGS, (stored) => {
+        if (chrome.runtime.lastError) {
+          handleInvalidatedContext();
+          return;
+        }
+        currentSettings = { ...DEFAULT_SETTINGS, ...stored };
+        applyAll();
+      });
+    } catch (err) {
+      handleInvalidatedContext();
+    }
   }
 
   // Cambios desde el popup (o desde storage.sync en otro dispositivo) llegan
   // acá y se reaplican al instante, sin recargar la pestaña.
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName !== 'sync') return;
-    let changed = false;
-    for (const key of Object.keys(changes)) {
-      if (key in currentSettings) {
-        currentSettings[key] = changes[key].newValue;
-        changed = true;
+  try {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName !== 'sync') return;
+      if (!isExtensionContextValid()) {
+        handleInvalidatedContext();
+        return;
       }
-    }
-    if (changed) applyAll();
-  });
+      let changed = false;
+      for (const key of Object.keys(changes)) {
+        if (key in currentSettings) {
+          currentSettings[key] = changes[key].newValue;
+          changed = true;
+        }
+      }
+      if (changed) applyAll();
+    });
+  } catch (err) {
+    handleInvalidatedContext();
+  }
 
   // ---------- Reaplicación en SPA ----------
 
