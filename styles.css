@@ -96,59 +96,48 @@ ytd-watch-next-secondary-results-renderer #metadata-line {
 /* YouTube viene migrando los items de "recomendados" al nuevo componente
    <yt-lockup-view-model> (mismo que usa en resultados de búsqueda), que ya
    no es un ytd-compact-video-renderer con los ids de arriba (#meta,
-   #video-title, etc). Sin este bloque, esos items quedan con el layout
-   grande por defecto (miniatura arriba, texto abajo) en vez de la lista
-   compacta horizontal. El tag <yt-lockup-view-model> es más estable que sus
-   clases internas, así que apoyamos el selector ahí. */
+   #video-title, etc). El layout real (vertical vs. horizontal) no lo
+   define el tag <yt-lockup-view-model> en sí -por defecto no tiene caja
+   propia-, sino un <div> hijo con la clase .ytLockupViewModelHost, que
+   además trae .ytLockupViewModelVertical (por eso se veía como tarjeta
+   grande con miniatura arriba y texto abajo). Selectores confirmados
+   inspeccionando el HTML real servido por YouTube (2025-09), no un tag
+   genérico adivinado. Si YouTube renombra estas clases, volver a pedir
+   el outerHTML de un item con DevTools (Copy > Copy outerHTML) y ajustar
+   acá. */
 ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: flex-start !important;
-  gap: 8px !important;
+  display: block !important;
   margin-bottom: 8px !important;
 }
 
-ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model yt-thumbnail-view-model {
-  width: 120px !important;
-  min-width: 120px !important;
-  max-width: 120px !important;
-  flex-shrink: 0 !important;
-}
-
-ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model h3,
-ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model [class*="title"] {
-  font-size: 13px !important;
-  line-height: 1.3 !important;
-  -webkit-line-clamp: 2 !important;
-}
-
-/* Red de seguridad estructural: si el item ni siquiera es un
-   yt-lockup-view-model (YouTube prueba varios formatos por A/B test), forzamos
-   que CUALQUIER hijo directo de #items se vea como fila [miniatura | texto],
-   asumiendo únicamente que el primer hijo del item es su miniatura -eso no
-   cambió en ningún rediseño hasta ahora-, sin depender de nombres de tag o
-   clase. Menos preciso que los bloques de arriba pero más resistente a
-   cambios de marcado. */
-ytd-watch-next-secondary-results-renderer #items > * {
+ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model .ytLockupViewModelHost {
   display: flex !important;
   flex-direction: row !important;
   align-items: flex-start !important;
   gap: 8px !important;
 }
 
-ytd-watch-next-secondary-results-renderer #items > * > *:first-child {
+/* .ytLockupViewModelContentImage es el <a> que envuelve la miniatura. */
+ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model .ytLockupViewModelContentImage {
   width: 120px !important;
   min-width: 120px !important;
   max-width: 120px !important;
   flex-shrink: 0 !important;
 }
 
-ytd-watch-next-secondary-results-renderer #items > * img {
-  width: 100% !important;
-  height: auto !important;
+/* .ytLockupViewModelMetadata es el contenedor de título/canal/vistas; que
+   ocupe el resto del ancho en vez de quedar angosto debajo de la miniatura. */
+ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model .ytLockupViewModelMetadata {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
 }
 
-ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model [class*="metadata-row"] {
+ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model .ytLockupMetadataViewModelHeadingReset {
+  font-size: 13px !important;
+  line-height: 1.3 !important;
+}
+
+ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model .ytContentMetadataViewModelMetadataRow {
   font-size: 11px !important;
   line-height: 1.3 !important;
 }
