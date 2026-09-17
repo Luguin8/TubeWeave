@@ -297,7 +297,10 @@ html.ytx-hide-like-count #segmented-like-button .yt-spec-button-shape-next__butt
 html.ytx-hide-like-count #segmented-dislike-button .yt-spec-button-shape-next__button-text-content,
 html.ytx-hide-like-count like-button-view-model .yt-spec-button-shape-next__button-text-content,
 html.ytx-hide-like-count dislike-button-view-model .yt-spec-button-shape-next__button-text-content,
-html.ytx-hide-like-count #top-level-buttons-computed ytd-toggle-button-renderer #text {
+html.ytx-hide-like-count #top-level-buttons-computed ytd-toggle-button-renderer #text,
+/* YouTube renombró las clases BEM (kebab-case) a camelCase en el rediseño
+   del segmented-like-dislike-button-view-model; se cubren ambas variantes. */
+html.ytx-hide-like-count #top-level-buttons-computed .ytSpecButtonShapeNextButtonTextContent {
   display: none !important;
 }
 
