@@ -265,27 +265,40 @@ html.ytx-compact-grid ytd-rich-grid-renderer ytd-rich-item-renderer {
   border-bottom: 1px solid var(--yt-spec-10-percent-layer, rgba(128, 128, 128, 0.2));
 }
 
-html.ytx-compact-grid ytd-rich-item-renderer #dismissible {
+/* El home migró la tarjeta de la grilla al mismo componente
+   <yt-lockup-view-model> que ya usa la sidebar de recomendados (ver
+   sección 1b): #dismissible, ytd-thumbnail y #details ya no existen
+   adentro de ytd-rich-item-renderer, así que las reglas de abajo no hacían
+   nada (la clase ytx-compact-grid se aplicaba bien al <html>, pero no
+   quedaba ningún selector real para agarrarse). Confirmado inspeccionando
+   youtube.com/@MrBeast/videos (2025-09): misma jerarquía interna que la
+   sidebar -.ytLockupViewModelHost > [a.ytLockupViewModelContentImage] +
+   [div.ytLockupViewModelMetadata]-, solo cambian algunas clases
+   modificadoras (p. ej. RichGridLegacyMargin en vez de Compact). Si vuelve
+   a romperse, Copy > Copy outerHTML de una tarjeta del home y ajustar acá. */
+html.ytx-compact-grid ytd-rich-item-renderer yt-lockup-view-model .ytLockupViewModelHost {
   display: flex !important;
   flex-direction: row !important;
   align-items: flex-start !important;
+  gap: 12px !important;
 }
 
-html.ytx-compact-grid ytd-rich-item-renderer ytd-thumbnail {
+html.ytx-compact-grid ytd-rich-item-renderer yt-lockup-view-model .ytLockupViewModelContentImage {
   width: 200px !important;
   min-width: 200px !important;
   max-width: 200px !important;
-  margin-right: 12px !important;
+  flex-shrink: 0 !important;
 }
 
-html.ytx-compact-grid ytd-rich-item-renderer #details {
-  padding-top: 0 !important;
+html.ytx-compact-grid ytd-rich-item-renderer yt-lockup-view-model .ytLockupViewModelMetadata {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
 }
 
-/* Evita que se sigan generando filas "grandes" fantasma en el grid */
-html.ytx-compact-grid ytd-rich-grid-renderer #contents.ytd-rich-grid-renderer > ytd-rich-grid-row {
-  display: contents !important;
-}
+/* Nota: la vieja regla "> ytd-rich-grid-row { display: contents }" para
+   evitar filas fantasma se sacó porque ya no aplica: #contents tiene a los
+   ytd-rich-item-renderer como hijos directos, sin ytd-rich-grid-row de por
+   medio (confirmado en la misma inspección). */
 
 /* ============================================================
    7) Ocultar SOLO el contador numérico de Me gusta/No me gusta
