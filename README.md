@@ -4,7 +4,8 @@ TubeWeave is a Manifest V3 browser extension that gives you fine-grained control
 
 ## Features
 
-- **Focus mode** — a button injected directly on the video page (top area) that hides the recommended videos sidebar and forces theater mode, giving the player a near-fullscreen feel without leaving the tab or using the real Fullscreen API.
+- **Focus mode** — an "Ocultar recomendados" button, shown as the first row above the recommended videos list, that hides the entire sidebar *and* the top masthead (logo, search bar, avatar), forces theater mode, and stretches the player to fill the whole viewport — a "fake fullscreen" inside the tab, without using the real Fullscreen API (you can still switch tabs or change the URL). While active, the button relocates itself into the player's own control bar (next to settings/captions/fullscreen) as a small "Mostrar recomendados" toggle to revert everything back to normal, including turning theater mode back off if it wasn't separately forced on.
+- **Compact recommended sidebar** — always on (no toggle needed): the related-videos list uses a compact row layout (small thumbnail + title/channel beside it) instead of large cards, so 6+ videos fit without scrolling.
 - **Hide Shorts** — removes Shorts shelves from the home feed and search results.
 - **Hide comments** — hides the comments section under videos.
 - **Force theater mode** — automatically switches every video to the wide theater layout.
@@ -26,6 +27,8 @@ YouTube is a single-page application (Polymer/Web Components), so a content scri
 Simple visibility/style features are implemented by toggling CSS classes on `<html>`, with the actual rules living in `styles.css` — this keeps the JS resilient to YouTube changing its internal markup. Forced theater mode is the one feature that needs real JS: it clicks YouTube's own theater-mode button so the internal `<video>` element is properly resized by YouTube's own code.
 
 Settings changes made in the popup are written to `chrome.storage.sync` and picked up by the content script via `chrome.storage.onChanged`, so changes apply instantly across every open YouTube tab.
+
+Reloading the extension from `chrome://extensions` does **not** re-inject `content.js` into tabs that were already open — they keep running the old script with a torn-down `chrome.runtime`/`chrome.storage`. TubeWeave detects this ("Extension context invalidated") and fails gracefully with a console warning instead of throwing; the tab still needs a real reload (F5) to pick up the new version, which is standard behavior for unpacked extensions in development.
 
 ## Project structure
 
