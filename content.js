@@ -141,12 +141,41 @@
   // más, pase lo que pase en el DOM después. Se resetea en cada video nuevo
   // (compara video-id) porque no hay forma confiable de saber en qué estado
   // arrancó ese video puntual.
+  //
+  // MÁS IMPORTANTE TODAVÍA: un usuario reportó pantalla completamente negra
+  // al activar el modo foco en su layout (el de una sola columna, con
+  // #secondary oculto nativamente). No pudimos reproducirlo ni diagnosticarlo
+  // en vivo todavía, así que en vez de seguir adivinando arreglos para un
+  // layout que no podemos probar, la función directamente NO TOCA el modo
+  // teatro (ni clickea .ytp-size-button) salvo en el ÚNICO layout que
+  // probamos de punta a punta y confirmamos que funciona: la sidebar clásica
+  // (#secondary visible con ancho real). En cualquier otro caso -sidebar
+  // oculta, layout de una columna, ventana angosta, lo que sea- esta función
+  // no hace nada, y el modo foco se limita a ocultar recomendados/masthead y
+  // ensanchar la columna principal (ver styles.css), sin arriesgarse a
+  // romper el reproductor. Mejor un modo foco incompleto que uno que deja
+  // la pantalla en negro.
+  // OJO: no se puede decidir esto mirando si #secondary está visible en
+  // este momento, porque applyClassToggles() ya le puso la clase
+  // ytx-focus-mode a <html> ANTES de que se llame a esta función dentro del
+  // mismo applyAll() -y esa clase es justamente la que oculta #secondary
+  // cuando el modo foco está activo-. Si se chequea su visibilidad acá,
+  // siempre va a dar "oculto" apenas se prende el modo foco, aunque sea el
+  // layout clásico real. Por eso se usan los atributos propios de YouTube
+  // en <ytd-watch-flexy> (is-two-columns_ / flexy-large-window_), que nunca
+  // los tocamos nosotros y reflejan la clasificación nativa de YouTube, sin
+  // importar qué le hayamos hecho nosotros al DOM en este mismo ciclo.
+  function isVerifiedClassicSidebarLayout(flexy) {
+    return flexy.hasAttribute('is-two-columns_') && flexy.hasAttribute('flexy-large-window_');
+  }
+
   let lastKnownTheaterState = false;
   let theaterTrackedVideoId = null;
 
   function applyTheaterMode(shouldBeTheater) {
     const flexy = safeQuery('ytd-watch-flexy');
     if (!flexy) return; // no estamos en una página de video
+    if (!isVerifiedClassicSidebarLayout(flexy)) return;
 
     const videoId = flexy.getAttribute('video-id');
     if (videoId !== theaterTrackedVideoId) {
