@@ -14,13 +14,14 @@
       la pestaña (no es la Fullscreen API real, por eso se puede seguir
       navegando o cambiando la URL con el modo activo).
 
-      Mientras el modo está activo, content.js reubica el botón fuera de
-      #secondary (a document.body, con la variante .ytx-focus-btn--floating)
-      antes de que esta regla lo oculte, así que acá sí podemos ocultar
-      #secondary entero sin perder la forma de revertir el modo. Encogerlo
-      en vez de ocultarlo (como se probó antes) generaba un bug: #secondary
-      tiene lógica propia de YouTube (sticky con offsets calculados por JS)
-      que lo despositiona en vez de simplemente encogerse.
+      El botón vive siempre dentro de los controles nativos del
+      reproductor (.ytp-button, ver content.js), nunca adentro de
+      #secondary/#related, así que ocultar esos contenedores enteros acá
+      no se lo lleva puesto ni rompe la forma de revertir el modo.
+      Encoger #secondary en vez de ocultarlo (como se probó antes)
+      generaba un bug aparte: #secondary tiene lógica propia de YouTube
+      (sticky con offsets calculados por JS) que lo despositiona en vez
+      de simplemente encogerse.
    ============================================================ */
 html.ytx-focus-mode #secondary.ytd-watch-flexy {
   display: none !important;
@@ -33,13 +34,13 @@ html.ytx-focus-mode #primary.ytd-watch-flexy {
   margin-right: 0 !important;
 }
 
-/* Layout "is-single-column" (ver content.js/getRecommendationsContainer):
-   acá #secondary YA está oculto nativamente por YouTube (es un layout de
-   una sola columna, sin sidebar) y los relacionados viven en #related,
-   debajo del player junto con la descripción y los comentarios. Esta
-   regla es la que realmente los oculta en ese layout; en el layout
-   clásico de dos columnas es inofensiva (#related, si existe ahí, ya
-   queda oculto como descendiente de #secondary de la regla de arriba). */
+/* Layout "is-single-column" de YouTube: acá #secondary YA está oculto
+   nativamente (es un layout de una sola columna, sin sidebar) y los
+   relacionados viven en #related, debajo del player junto con la
+   descripción y los comentarios. Esta regla es la que realmente los
+   oculta en ese layout; en el layout clásico de dos columnas es
+   inofensiva (#related, si existe ahí, ya queda oculto como descendiente
+   de #secondary de la regla de arriba). */
 html.ytx-focus-mode #related {
   display: none !important;
 }
@@ -170,64 +171,35 @@ ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model .ytContent
   line-height: 1.3 !important;
 }
 
-/* Botón de modo foco, inyectado por content.js. Estilo base compartido por
-   sus dos variantes (ver ensureFocusButton para cuándo se usa cada una). */
+/* Botón de modo foco, inyectado por content.js como un ícono más dentro de
+   .ytp-right-controls-right, el grupo real de controles del reproductor
+   (junto a teatro/pantalla completa, confirmado por inspección real del
+   DOM). Vive ahí siempre, prendido o apagado el modo foco: es el único
+   punto de anclaje que se mantuvo estable en los distintos rediseños de
+   YouTube del layout de la sidebar/relacionados (ver content.js). Estilo
+   consistente con los botones nativos (.ytp-button): transparente, texto
+   chico, mismo alto que la barra de controles. */
 .ytx-focus-btn {
-  border: none;
-  background: rgba(0, 0, 0, 0.75);
-  color: #fff;
-  font-size: 13px;
-  font-family: 'Roboto', Arial, sans-serif;
-  cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-}
-
-.ytx-focus-btn:hover {
-  background: rgba(0, 0, 0, 0.9);
-}
-
-.ytx-focus-btn.is-active {
-  background: #ff0000;
-}
-
-/* Sidebar visible: primer hijo de #secondary, en flujo normal, como una
-   fila propia arriba de todo lo demás (tabs/chips incluidos) en vez de
-   flotar encima con position:fixed. */
-.ytx-focus-btn--inline {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  box-sizing: border-box;
-  margin: 0 0 12px;
-  padding: 10px 14px;
-  border-radius: 8px;
-}
-
-/* Sidebar oculta (modo foco activo): content.js lo inserta como un ícono
-   más adentro de .ytp-right-controls-right, el grupo real de controles del
-   reproductor (junto a teatro/pantalla completa, confirmado por inspección
-   real del DOM). Estilo consistente con los botones nativos de YouTube
-   (.ytp-button): transparente, texto chico, mismo alto que la barra de
-   controles, en vez del pill rojo gigante flotando suelto de antes. */
-.ytx-focus-btn--floating {
-  position: static;
   height: 100%;
   margin: 0;
   padding: 0 10px;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
+  border: none;
   border-radius: 2px;
   background: transparent;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Roboto', Arial, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
   box-shadow: none;
 }
 
-.ytx-focus-btn--floating:hover {
+.ytx-focus-btn:hover {
   background: rgba(255, 255, 255, 0.2);
 }
 
-.ytx-focus-btn--floating.is-active {
+.ytx-focus-btn.is-active {
   background: rgba(255, 0, 0, 0.4);
 }
 

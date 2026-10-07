@@ -143,40 +143,18 @@
   // pantalla completa, pero SIN usar la Fullscreen API real (hay que poder
   // seguir cambiando de pestaña o de URL).
   //
-  // El botón cambia de posición según el estado, en vez de vivir siempre en
-  // el mismo lugar:
-  //   - Sidebar visible (focusMode apagado): se inserta como PRIMER HIJO de
-  //     #secondary, en el flujo normal, para que empuje hacia abajo las
-  //     tabs/chips propias de YouTube en vez de taparlas (antes vivía
-  //     siempre en document.body con position:fixed y quedaba flotando
-  //     encima de esas tabs).
-  //   - Sidebar oculta (focusMode prendido): #secondary entero se oculta con
-  //     display:none, así que un botón adentro dejaría de ser clickeable
-  //     para revertir. Se reubica como un ícono más dentro de
-  //     .ytp-right-controls-right, el grupo de controles nativo del
-  //     reproductor (junto a teatro/pantalla completa) para que quede chico
-  //     e integrado en vez de un pill gigante flotando encima del video.
-  // YouTube tiene (al menos) dos layouts para la página de video:
-  //   - "is-two-columns_": el clásico, con #secondary como sidebar visible
-  //     a la derecha del player.
-  //   - "is-single-column": más nuevo (gateado por cuenta/cohorte, no por
-  //     ancho de ventana — confirmado probando de 1000px a 1920px sin que
-  //     cambie). Acá #secondary sigue existiendo en el DOM pero queda
-  //     display:none/0x0 width SIEMPRE, y los relacionados se renderizan
-  //     en #related, debajo del player (junto con descripción/comentarios
-  //     en una sola columna), confirmado inspeccionando el DOM real.
-  // Esta función devuelve el contenedor que realmente está visible en
-  // cada caso, para no insertar el botón adentro de un #secondary oculto
-  // (eso lo dejaba en el DOM pero invisible para el usuario).
-  function getRecommendationsContainer(flexy) {
-    const secondary = safeQuery('#secondary', flexy);
-    if (secondary) {
-      const isVisible = getComputedStyle(secondary).display !== 'none' && secondary.getBoundingClientRect().width > 0;
-      if (isVisible) return secondary;
-    }
-    return safeQuery('#related', flexy);
-  }
-
+  // Vive SIEMPRE dentro de .ytp-right-controls-right, el grupo de controles
+  // nativo del reproductor (junto a teatro/pantalla completa), sin importar
+  // el estado de focusMode. Antes el botón vivía en #secondary cuando la
+  // sidebar estaba visible y se mudaba a los controles del player recién al
+  // activar el modo foco, pero YouTube viene rediseñando esa zona seguido:
+  // primero cambió la estructura interna de #secondary, después apareció un
+  // layout nuevo ("is-single-column") donde #secondary queda oculto para
+  // siempre y los relacionados se mudan a #related. Cada rediseño rompía la
+  // ubicación del botón de nuevo. Los controles del reproductor
+  // (.ytp-right-controls-right) fueron el único punto de anclaje que se
+  // mantuvo estable en todas las variantes de layout que probamos, así que
+  // ahora es el único lugar donde vive, en los dos estados.
   function ensureFocusButton() {
     const flexy = safeQuery('ytd-watch-flexy');
     const existingBtn = document.getElementById(FOCUS_BUTTON_ID);
@@ -206,34 +184,15 @@
       });
     }
 
-    if (currentSettings.focusMode) {
-      btn.classList.remove('ytx-focus-btn--inline');
-      btn.classList.add('ytx-focus-btn--floating');
-      const rightControls = safeQuery('.ytp-right-controls-right') || safeQuery('.ytp-right-controls');
-      if (rightControls) {
-        if (btn.parentElement !== rightControls) {
-          rightControls.prepend(btn);
-        }
-      } else if (btn.parentElement !== document.body) {
-        // El reproductor todavía no renderizó sus controles: dejamos el
-        // botón flotante momentáneamente para no perderlo.
-        document.body.appendChild(btn);
+    const rightControls = safeQuery('.ytp-right-controls-right') || safeQuery('.ytp-right-controls');
+    if (rightControls) {
+      if (btn.parentElement !== rightControls) {
+        rightControls.prepend(btn);
       }
-    } else {
-      const container = getRecommendationsContainer(flexy);
-      btn.classList.remove('ytx-focus-btn--floating');
-      btn.classList.add('ytx-focus-btn--inline');
-      if (container) {
-        // YouTube re-renderiza el contenido interno seguido; si eso
-        // desplaza nuestro botón, lo volvemos a poner como primer hijo acá.
-        if (container.firstElementChild !== btn) {
-          container.prepend(btn);
-        }
-      } else if (btn.parentElement !== document.body) {
-        // Ni #secondary ni #related renderizaron todavía: dejamos el
-        // botón flotante momentáneamente para no perderlo.
-        document.body.appendChild(btn);
-      }
+    } else if (btn.parentElement !== document.body) {
+      // El reproductor todavía no renderizó sus controles: dejamos el
+      // botón flotante momentáneamente para no perderlo.
+      document.body.appendChild(btn);
     }
 
     btn.textContent = currentSettings.focusMode ? 'Mostrar recomendados' : 'Ocultar recomendados';
