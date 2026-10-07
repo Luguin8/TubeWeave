@@ -121,20 +121,46 @@
   // negras o un layout roto. Lo correcto es clickear el botón real de
   // "Theater mode" para que el propio reproductor de YouTube haga el resize.
   //
-  // Comportamiento: bidireccional. Si hay que estar en teatro (wideTheaterMode
-  // o focusMode) y no lo está, lo activa; si NO hay que estar en teatro y
-  // sigue en teatro (por ejemplo, al salir del modo foco), lo desactiva. Así
-  // "forzar modo teatro" realmente fuerza en los dos sentidos, y salir del
-  // modo foco vuelve todo a la normalidad en vez de dejar el teatro prendido.
+  // IMPORTANTE (descubierto depurando un parpadeo infinito en vivo, con
+  // datos reales de la página, no supuestos): el atributo "theater" de
+  // <ytd-watch-flexy> NO existe en todos los layouts/anchos de ventana de
+  // YouTube. En una ventana angosta (is-two-columns_ + flexy-small-window_,
+  // ~1150px) se confirmó que .ytp-size-button NUNCA le pone el atributo
+  // "theater" a flexy, clickearlo ni siquiera agranda el video (lo encoge
+  // de 856 a 703px) y en cambio expande/colapsa el panel de comentarios.
+  // La versión anterior de esta función decidía si clickear LEYENDO ese
+  // atributo en cada pasada del MutationObserver (cada ~250ms); como el
+  // atributo nunca cambiaba, creía que el click "no sirvió" y volvía a
+  // clickear sin parar -más de 80 clicks en 30 segundos-, lo que producía
+  // el parpadeo reportado por el usuario.
+  //
+  // Por eso esta función ya NO lee ningún atributo de YouTube para decidir:
+  // lleva su propia memoria de qué le pidió al botón la última vez
+  // (lastKnownTheaterState) y sólo clickea cuando el estado deseado cambia
+  // respecto a esa memoria. Un solo click por cambio real de ajuste, nunca
+  // más, pase lo que pase en el DOM después. Se resetea en cada video nuevo
+  // (compara video-id) porque no hay forma confiable de saber en qué estado
+  // arrancó ese video puntual.
+  let lastKnownTheaterState = false;
+  let theaterTrackedVideoId = null;
+
   function applyTheaterMode(shouldBeTheater) {
     const flexy = safeQuery('ytd-watch-flexy');
     if (!flexy) return; // no estamos en una página de video
 
-    const isTheaterAlready = flexy.hasAttribute('theater');
-    if (shouldBeTheater === isTheaterAlready) return;
+    const videoId = flexy.getAttribute('video-id');
+    if (videoId !== theaterTrackedVideoId) {
+      theaterTrackedVideoId = videoId;
+      lastKnownTheaterState = false;
+    }
+
+    if (shouldBeTheater === lastKnownTheaterState) return;
 
     const sizeButton = safeQuery('.ytp-size-button');
-    sizeButton?.click();
+    if (!sizeButton) return;
+
+    sizeButton.click();
+    lastKnownTheaterState = shouldBeTheater;
   }
 
   // ---------- Feature 1: botón de "modo foco" inyectado en la página ----------

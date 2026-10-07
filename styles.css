@@ -60,11 +60,14 @@ html.ytx-focus-mode ytd-page-manager {
   margin-top: 0 !important;
 }
 
-/* Estira el contenedor del player en altura. content.js ya se encargó de
-   activar el teatro real (clickeando el botón de YouTube), así que acá solo
-   forzamos que ese contenedor use toda la altura visible de la pestaña. Como
-   el masthead queda oculto (regla de arriba), ya no hay que restarle su
-   altura: el video puede usar el 100vh completo.
+/* Estira el contenedor del player en altura. Depurando un parpadeo
+   infinito en vivo (datos reales, no supuestos) confirmamos que el
+   atributo "theater" de <ytd-watch-flexy> NO aparece en todos los
+   layouts/anchos de ventana de YouTube -en uno angosto confirmado,
+   .ytp-size-button ni siquiera agranda el video, achica el reproductor y
+   expande el panel de comentarios-. Por eso estas reglas ya NO dependen
+   de [theater]: se aplican siempre que ytx-focus-mode esté activo, sin
+   esperar a que YouTube confirme nada por su cuenta.
    #movie_player es el id principal: lo usa la propia API pública de
    YouTube (document.getElementById('movie_player')) desde hace más de una
    década, así que es el selector más estable para forzar el tamaño real
@@ -75,18 +78,18 @@ html.ytx-focus-mode ytd-page-manager {
    "outer" quedan como respaldo por si en tu versión de YouTube el que
    define la altura real es un ancestro en vez de #movie_player mismo.
    Si ninguno alcanza, pasame el HTML de #player-container-outer. */
-html.ytx-focus-mode ytd-watch-flexy[theater] #movie_player,
-html.ytx-focus-mode ytd-watch-flexy[theater] #player-container-outer,
-html.ytx-focus-mode ytd-watch-flexy[theater] #player-container,
-html.ytx-focus-mode ytd-watch-flexy[theater] #player-theater-container,
-html.ytx-focus-mode ytd-watch-flexy[theater] #full-bleed-container,
-html.ytx-focus-mode ytd-watch-flexy[theater] #player {
+html.ytx-focus-mode #movie_player,
+html.ytx-focus-mode #player-container-outer,
+html.ytx-focus-mode #player-container,
+html.ytx-focus-mode #player-theater-container,
+html.ytx-focus-mode #full-bleed-container,
+html.ytx-focus-mode #player {
   height: 100vh !important;
   max-height: 100vh !important;
   width: 100% !important;
 }
 
-html.ytx-focus-mode ytd-watch-flexy[theater] #columns {
+html.ytx-focus-mode #columns {
   max-width: 100% !important;
 }
 
