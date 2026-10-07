@@ -33,6 +33,17 @@ html.ytx-focus-mode #primary.ytd-watch-flexy {
   margin-right: 0 !important;
 }
 
+/* Layout "is-single-column" (ver content.js/getRecommendationsContainer):
+   acá #secondary YA está oculto nativamente por YouTube (es un layout de
+   una sola columna, sin sidebar) y los relacionados viven en #related,
+   debajo del player junto con la descripción y los comentarios. Esta
+   regla es la que realmente los oculta en ese layout; en el layout
+   clásico de dos columnas es inofensiva (#related, si existe ahí, ya
+   queda oculto como descendiente de #secondary de la regla de arriba). */
+html.ytx-focus-mode #related {
+  display: none !important;
+}
+
 /* El "fullscreen falso" tiene que tapar TODO lo de arriba, buscador
    incluido, no solo la sidebar. #masthead-container es el elemento fixed
    (confirmado por inspección real) que contiene toda la barra superior de

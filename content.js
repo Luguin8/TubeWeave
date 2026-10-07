@@ -156,6 +156,27 @@
   //     .ytp-right-controls-right, el grupo de controles nativo del
   //     reproductor (junto a teatro/pantalla completa) para que quede chico
   //     e integrado en vez de un pill gigante flotando encima del video.
+  // YouTube tiene (al menos) dos layouts para la página de video:
+  //   - "is-two-columns_": el clásico, con #secondary como sidebar visible
+  //     a la derecha del player.
+  //   - "is-single-column": más nuevo (gateado por cuenta/cohorte, no por
+  //     ancho de ventana — confirmado probando de 1000px a 1920px sin que
+  //     cambie). Acá #secondary sigue existiendo en el DOM pero queda
+  //     display:none/0x0 width SIEMPRE, y los relacionados se renderizan
+  //     en #related, debajo del player (junto con descripción/comentarios
+  //     en una sola columna), confirmado inspeccionando el DOM real.
+  // Esta función devuelve el contenedor que realmente está visible en
+  // cada caso, para no insertar el botón adentro de un #secondary oculto
+  // (eso lo dejaba en el DOM pero invisible para el usuario).
+  function getRecommendationsContainer(flexy) {
+    const secondary = safeQuery('#secondary', flexy);
+    if (secondary) {
+      const isVisible = getComputedStyle(secondary).display !== 'none' && secondary.getBoundingClientRect().width > 0;
+      if (isVisible) return secondary;
+    }
+    return safeQuery('#related', flexy);
+  }
+
   function ensureFocusButton() {
     const flexy = safeQuery('ytd-watch-flexy');
     const existingBtn = document.getElementById(FOCUS_BUTTON_ID);
@@ -199,18 +220,18 @@
         document.body.appendChild(btn);
       }
     } else {
-      const secondary = safeQuery('#secondary', flexy);
+      const container = getRecommendationsContainer(flexy);
       btn.classList.remove('ytx-focus-btn--floating');
       btn.classList.add('ytx-focus-btn--inline');
-      if (secondary) {
-        // YouTube re-renderiza #secondary-inner seguido; si eso desplaza
-        // nuestro botón, lo volvemos a poner como primer hijo acá.
-        if (secondary.firstElementChild !== btn) {
-          secondary.prepend(btn);
+      if (container) {
+        // YouTube re-renderiza el contenido interno seguido; si eso
+        // desplaza nuestro botón, lo volvemos a poner como primer hijo acá.
+        if (container.firstElementChild !== btn) {
+          container.prepend(btn);
         }
       } else if (btn.parentElement !== document.body) {
-        // La sidebar todavía no renderizó: dejamos el botón flotante
-        // momentáneamente para no perderlo.
+        // Ni #secondary ni #related renderizaron todavía: dejamos el
+        // botón flotante momentáneamente para no perderlo.
         document.body.appendChild(btn);
       }
     }
