@@ -225,10 +225,30 @@ ytd-watch-next-secondary-results-renderer #items yt-lockup-view-model .ytContent
    ============================================================
    Nota: los estantes de Shorts son de los elementos que más cambian de
    marcado entre versiones de YouTube. Si dejan de ocultarse, pasame el
-   HTML del estante para ajustar el selector. */
+   HTML del estante para ajustar el selector.
+
+   YouTube reemplazó ytd-reel-shelf-renderer / ytd-rich-shelf-renderer[is-
+   shorts] (ya no existen) por <grid-shelf-view-model>, el mismo shelf
+   genérico que usa para otros carruseles, así que no alcanza con el tag:
+   hay que confirmar que efectivamente contiene items de Shorts. El
+   selector estructural confiable es la presencia de <ytm-shorts-lockup-
+   view-model>/<ytm-shorts-lockup-view-model-v2> adentro (no depende del
+   idioma, a diferencia de matchear el texto del header "Shorts").
+   Confirmado inspeccionando resultados de búsqueda reales (2026-10).
+
+   A diferencia del home viejo (donde ytd-rich-section-renderer SÍ era
+   exclusivo de un solo shelf), en resultados de búsqueda el
+   ytd-item-section-renderer que envuelve el grid-shelf-view-model de
+   Shorts NO es exclusivo: en la misma sección conviven el shelf de Shorts
+   Y resultados de video normales como hermanos (confirmado: hasta 11
+   ytd-video-renderer reales en la misma sección). Ocultar ese contenedor
+   entero tapaba videos reales, así que acá SOLO se oculta el
+   grid-shelf-view-model en sí, nunca su ytd-item-section-renderer. */
 html.ytx-hide-shorts ytd-reel-shelf-renderer,
 html.ytx-hide-shorts ytd-rich-shelf-renderer[is-shorts],
-html.ytx-hide-shorts ytd-rich-section-renderer:has(> ytd-rich-shelf-renderer[is-shorts]) {
+html.ytx-hide-shorts ytd-rich-section-renderer:has(> ytd-rich-shelf-renderer[is-shorts]),
+html.ytx-hide-shorts grid-shelf-view-model:has(ytm-shorts-lockup-view-model),
+html.ytx-hide-shorts grid-shelf-view-model:has(ytm-shorts-lockup-view-model-v2) {
   display: none !important;
 }
 
